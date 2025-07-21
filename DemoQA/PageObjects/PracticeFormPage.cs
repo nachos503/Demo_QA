@@ -21,7 +21,7 @@ namespace DemoQA.PageObjects
             _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(10));
         }
 
-        // === Локаторы ===
+        // Локаторы 
         private By FirstNameInput => By.Id("firstName");
         private By LastNameInput => By.Id("lastName");
         private By EmailInput => By.Id("userEmail");
@@ -30,7 +30,6 @@ namespace DemoQA.PageObjects
         private By DateOfBirthInput => By.Id("dateOfBirthInput");
         private By MonthSelect => By.ClassName("react-datepicker__month-select");
         private By YearSelect => By.ClassName("react-datepicker__year-select");
-        private By DayCell(string d) => By.XPath($"//div[contains(@class,'react-datepicker__day') and text()='{d}']");
         private By SubjectsInput => By.Id("subjectsInput");
         private By SubjectOption(string s) => By.XPath($"//div[contains(@id,'react-select-2-option') and text()='{s}']");
         private By HobbyCheckbox(string h) => By.XPath($"//label[text()='{h}']");
@@ -43,14 +42,14 @@ namespace DemoQA.PageObjects
         private By ModalCloseButton => By.Id("closeLargeModal");
         private By ResultRows => By.XPath(".//table/tbody/tr");
 
-        // === Методы ===
+        // Методы 
         public PracticeFormPage Open()
         {
             _driver.Navigate().GoToUrl(Url);
             _driver.Manage().Window.Maximize();
             // Закрыть плавающий баннер, если он есть
             try { _driver.FindElement(By.Id("close-fixedban")).Click(); } catch { }
-            // Спрячем footer и fixedban навсегда
+            // Скрываем footer и fixedban навсегда
             ((IJavaScriptExecutor)_driver).ExecuteScript(@"
                 document.getElementById('fixedban')?.remove();
                 document.querySelector('footer')?.remove();
@@ -73,12 +72,29 @@ namespace DemoQA.PageObjects
 
         public PracticeFormPage SetMobile(string t) { _driver.FindElement(MobileInput).SendKeys(t); return this; }
 
-        public PracticeFormPage SetDateOfBirth(string d, string m, string y)
+        public PracticeFormPage SetDateOfBirth(string day, string month, string year)
         {
+            // открываем календарь
             _driver.FindElement(DateOfBirthInput).Click();
-            _wait.Until(ExpectedConditions.ElementIsVisible(MonthSelect)).SendKeys(m);
-            _driver.FindElement(YearSelect).SendKeys(y);
-            _driver.FindElement(DayCell(d)).Click();
+
+            // выбираем месяц
+            var monthDropdown = new SelectElement(_driver.FindElement(MonthSelect));
+            monthDropdown.SelectByText(month);
+
+            // выбираем год
+            var yearDropdown = new SelectElement(_driver.FindElement(YearSelect));
+            yearDropdown.SelectByText(year);
+
+            // день без ведущего нуля
+            var dayInt = int.Parse(day).ToString();
+            // кликаем именно по дню в текущем месяце
+            var dayLocator = By.XPath(
+                $"//div[contains(@class,'react-datepicker__day') and " +
+                $"not(contains(@class,'react-datepicker__day--outside-month')) and " +
+                $"text()='{dayInt}']"
+            );
+            _wait.Until(d => d.FindElement(dayLocator)).Click();
+
             return this;
         }
 

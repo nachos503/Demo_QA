@@ -109,5 +109,76 @@ namespace DemoQA.Tests
             Assert.That(validationMessage, Is.Not.Empty,
                 "Ожидалось, что при неверном email появится сообщение валидации.");
         }
+
+        // Для всех комбинаций State - City
+        [TestCase("NCR", "Delhi")]
+        [TestCase("Uttar Pradesh", "Agra")]
+        [TestCase("Uttar Pradesh", "Lucknow")]
+        [TestCase("Haryana", "Karnal")]
+        [TestCase("Haryana", "Panipat")]
+        [TestCase("Rajasthan", "Jaipur")]
+        [TestCase("Rajasthan", "Jaiselmer")]
+        public void FillForm_StateAndCitySelection_ShouldDisplayCorrectStateCity(string state, string city)
+        {
+            // файл фотографии существует
+            var picturePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Resources", "test-image.jpg");
+            Assert.IsTrue(File.Exists(picturePath), $"Test image not found: {picturePath}");
+
+            var page = new PracticeFormPage(_driver)
+                .Open()
+                .SetFirstName("State")
+                .SetLastName("City")
+                .SetEmail("state.city@example.com")
+                .SetGender("Other")
+                .SetMobile("9876543210")
+                .SetDateOfBirth("21", "August", "1992")
+                .AddSubject("English")
+                .SetHobby("Reading")
+                .UploadPicture(picturePath)
+                .SetAddress("Some address")
+                .SelectState(state)
+                .SelectCity(city)
+                .Submit();
+
+            var result = page.GetSubmittedData();
+            Assert.That(result["State and City"], Is.EqualTo($"{state} {city}"));
+            page.CloseModal();
+        }
+
+        [TestCase("29", "February", "2000")]
+        [TestCase("29", "February", "2004")]
+        [TestCase("28", "February", "2001")]
+        [TestCase("31", "December", "1999")]
+        [TestCase("01", "January", "2025")]
+        public void FillForm_DateOfBirth_ShouldDisplayCorrect(string day, string month, string year)
+        {
+            // файл фотографии существует
+            var picturePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Resources", "test-image.jpg");
+            Assert.IsTrue(File.Exists(picturePath), $"Test image not found: {picturePath}");
+
+            // заполняем форму
+            var page = new PracticeFormPage(_driver)
+                .Open()
+                .SetFirstName("Date")
+                .SetLastName("Tester")
+                .SetEmail("date.tester@example.com")
+                .SetGender("Other")
+                .SetMobile("0001112222")
+                .SetDateOfBirth(day, month, year)
+                .AddSubject("English")
+                .SetHobby("Reading")
+                .UploadPicture(picturePath)
+                .SetAddress("Any address")
+                .SelectState("NCR")
+                .SelectCity("Delhi")
+                .Submit();
+
+            // проверяем, что дата в модалке соответствует ожиданию
+            var result = page.GetSubmittedData();
+            var expected = $"{day} {month},{year}";
+            Assert.That(result["Date of Birth"], Is.EqualTo(expected));
+
+            page.CloseModal();
+        }
     }
 }
